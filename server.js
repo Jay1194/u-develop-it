@@ -39,8 +39,12 @@ const db = mysql.createConnection(
 //query the database to test the connection - gets all candidates OPERATIONS
 app.get('/api/candidates', (req, res) => {//This route is designated with the endpoint /api/candidates
 
-    //The SQL statement SELECT * FROM candidates is assigned to the sql variable.
-    const sql = `SELECT * FROM candidates`;
+    //The SQL statement SELECT * FROM candidates is assigned to the sql variable. - (Left JOIN query) for connecting candidates and partys table together!
+    const sql = `SELECT candidates.*, parties.name
+    AS party_name
+    FROM candidates
+    LEFT JOIN parties
+    ON candidates.party_id = parties.id`;
 
 //callback function will handle the client's request and the database's response.
 db.query(sql, (err, rows) => {
@@ -64,7 +68,14 @@ db.query(sql, (err, rows) => {
 
 //GET a single candidate -  OPERATIONS
 app.get('/api/candidate/:id', (req, res) => { //endpoint has a route parameter that will hold the value of the id to specify which candidate we'll select from the database.
-    const sql = `SELECT * FROM candidates WHERE id = ?`;
+
+    //(Left JOIN query) for connecting candidates and partys table together!
+    const sql = `SELECT candidates.*, parties.name
+    AS party_name
+    FROM candidates
+    LEFT JOIN parties
+    ON candidates.party_id = parties.id
+    WHERE candidates.id = ?`;
 
     //In the database call, we'll assign the captured value populated in the req.params object with the key id to params - The database call will then query the candidates table with this id and retrieve the row specified. Because params can be accepted in the database call as an array, params is assigned as an array with a single element, req.params.id.
     const params = [req.params.id];
