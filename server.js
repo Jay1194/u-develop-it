@@ -64,8 +64,6 @@ db.query(sql, (err, rows) => {
     });
 });
 
-
-
 //GET a single candidate -  OPERATIONS
 app.get('/api/candidate/:id', (req, res) => { //endpoint has a route parameter that will hold the value of the id to specify which candidate we'll select from the database.
 
@@ -95,6 +93,71 @@ db.query(sql, params, (err, row ) => {
   });
 });
 
+//Create a candidate -  HTTP request method post() to insert a candidate into the candidates table. We'll use the endpoint /api/candidate
+app.post('/api/candidate', ({ body }, res) => { //callback function, we'll use the object req.body to populate the candidate's data. Notice that we're using object destructuring to pull the body property out of the request object
+
+    //inputCheck module was provided by a helpful U Develop It member. We'll use this module to verify that user info in the request can create a candidate.
+    const errors = inputCheck(body, 'first_name', 'last_name', 'industry_connected');
+
+    //if the inputCheck() function returns an error, an error message is returned to the client as a 400 status code, to prompt for a different user request with a JSON object that contains the reasons for the errors
+    if (errors) {
+        res.status(400).json({ error: errors });
+        return;
+    }
+
+// Create Query for Create Operation - no column for the id. MySQL will autogenerate the id and relieve us of the responsibility to know which id is available to populate.
+//In the SQL command we use the INSERT INTO command for the candidates table to add the values that are assigned to params. The four placeholders must match the four values in params, so we must use an array.
+const sql = `INSERT INTO candidates ( first_name, last_name, industry_connected, party_id)
+VALUES (?,?,?)`;
+
+//Because the candidates table includes four columns—id, first_name, last_name, and industry_connected—we need four placeholders (?) for those four values. The values in the params array must match the order of those placeholders
+const params = [body.first_name, body.last_name, body.industry_connected, body.party_id];
+
+//query() method, we can execute the prepared SQL statement. 
+db.query(sql, params, (err, result) => {
+    if (err) {
+        res.status(400).json({ error: err.message});
+        return;
+    }
+    
+    //We send the response using the res.json() method with a success message and the user data that was used to create the new data entry.
+    res.json({
+        message: 'success',
+        data: body,
+        changes: result.affectedRows
+    });
+  });
+});
+
+// Update a candidate's party
+app.put('/api/candidate/:id', (req, res) => {
+    const errors = inputCheck(req.body, 'party_id');
+
+    if (errors) {
+      res.status(400).json({ error: errors });
+      return;
+    }
+
+    const sql = `UPDATE candidates SET party_id = ? 
+                 WHERE id = ?`;
+    const params = [req.body.party_id, req.params.id];
+    db.query(sql, params, (err, result) => {
+      if (err) {
+        res.status(400).json({ error: err.message });
+        // check if a record was found
+      } else if (!result.affectedRows) {
+        res.json({
+          message: 'Candidate not found'
+        });
+      } else {
+        res.json({
+          message: 'success candidate updated!',
+          data: req.body,
+          changes: result.affectedRows
+        });
+      }
+    });
+  });
 
 //need to use the API endpoint testing application Insomnia
 //Delete a candidate - ?) that denotes a placeholder, making this a prepared statement. A prepared statement can execute the same SQL statements repeatedly using different values in place of the placeholder. - hardcoding 1 temporarily to demonstrate how prepared statements work. So this would be the same as saying DELETE FROM candidates WHERE id = 1. - the param argument can be an array that holds multiple values for the multiple placeholders.
@@ -127,41 +190,59 @@ db.query(sql, params, (err, result) => {
 });
 });
 
-
-//Create a candidate -  HTTP request method post() to insert a candidate into the candidates table. We'll use the endpoint /api/candidate
-app.post('/api/candidate', ({ body }, res) => { //callback function, we'll use the object req.body to populate the candidate's data. Notice that we're using object destructuring to pull the body property out of the request object
-
-    //inputCheck module was provided by a helpful U Develop It member. We'll use this module to verify that user info in the request can create a candidate.
-    const errors = inputCheck(body, 'first_name', 'last_name', 'industry_connected');
-
-    //if the inputCheck() function returns an error, an error message is returned to the client as a 400 status code, to prompt for a different user request with a JSON object that contains the reasons for the errors
-    if (errors) {
-        res.status(400).json({ error: errors });
-        return;
-    }
-
-// Create Query for Create Operation - no column for the id. MySQL will autogenerate the id and relieve us of the responsibility to know which id is available to populate.
-//In the SQL command we use the INSERT INTO command for the candidates table to add the values that are assigned to params. The four placeholders must match the four values in params, so we must use an array.
-const sql = `INSERT INTO candidates ( first_name, last_name, industry_connected)
-VALUES (?,?,?)`;
-
-//Because the candidates table includes four columns—id, first_name, last_name, and industry_connected—we need four placeholders (?) for those four values. The values in the params array must match the order of those placeholders
-const params = [body.first_name, body.last_name, body.industry_connected];
-
-//query() method, we can execute the prepared SQL statement. 
-db.query(sql, params, (err, result) => {
-    if (err) {
-        res.status(400).json({ error: err.message});
-        return;
-    }
-    
-    //We send the response using the res.json() method with a success message and the user data that was used to create the new data entry.
-    res.json({
-        message: 'success',
-        data: body
+// GET route for all parties
+app.get('/api/parties', (req, res) => {
+    const sql = `SELECT * FROM parties`;
+    db.query(sql, (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: rows
+        });
     });
 });
+
+//route that includes an id parameter for a single party
+app.get('/api/party/:id', (req, res) => {
+    const sql = `SELECT * FROM parties WHERE id = ?`;
+    const params = [req.params.id];
+    db.query(sql, params, (err, row) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: row
+        });
+    });
 });
+
+//delete parties
+app.delete('/api/party/:id', (req, res) => {
+    const sql = `DELETE FROM parties WHERE id = ?`;
+    const params = [req.params.id];
+    db.query(sql, params, (err, result) => {
+        if (err) {
+            res.status(400).json({ error: res.message });
+            //check if anything was deleted
+        } else if (!result.affectedRows) {
+            res.json({
+                message: 'Party not found'
+            });
+        } else {
+            res.json({
+                message: 'deleted',
+                changes: result.affectedRows,
+                id: req.params.id
+            });
+        }
+    });
+});
+
 /*We'll need to use Insomnia to test this API endpoint, to use the HTTP request POST option.
  Add the API endpoint, http://localhost:3001/api/candidateLinks to an external site., and select POST in the drop-down menu of HTTP request methods.
 Before selecting Send, we must populate the body with the candidate information.
@@ -180,8 +261,14 @@ app.use((req, res) => {
 });
 
 //start the Express.js server on port 3001
+db.connect(err => {
+    if (err) throw err;
+    console.log('Database connected.');
 app.listen(PORT, () => {
     console.log(`server running on port ${PORT}`);
 });
-
+});
 // local host port connection into the address bar: http://localhost:3001
+
+
+
