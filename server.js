@@ -2,9 +2,6 @@ const express = require('express');
 const apiRoutes = require('./routes/apiRoutes');
 const db = require('./db/connection');
 
-//import the module first
-const inputCheck = require('./utils/inputCheck');
-
 //Add the PORT designation and the app expression
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -12,6 +9,8 @@ const app = express();
 //Add the Express.js middleware
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+// Use apiRoutes
 app.use('/api', apiRoutes);
 
 //handle user request not supported by the app - Default response for any other request (Not Found)  ----------always last route!!!!
@@ -19,7 +18,7 @@ app.use((req, res) => {
     res.status(404).end();
 });
 
-//start the Express.js server on port 3001
+//start the Express.js server on port 3001 after DB connection
 db.connect(err => {
     if (err) throw err;
     console.log('Database connected.');
