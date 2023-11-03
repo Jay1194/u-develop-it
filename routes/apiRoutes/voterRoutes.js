@@ -36,6 +36,7 @@ router.get('/voter/:id', (req, res) => {
     });
 });
 
+
 //add new voter
 router.post('/voter', ({ body }, res) => {
     // Data validation
