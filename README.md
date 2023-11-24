@@ -9,7 +9,7 @@ The U-develop-it provides a platform for creating and participating in polls. Us
 ## Features
 
 - Create and manage polls.
-- Vote on different topics.
+- Vote on different partys.
 - View real-time poll results.
 - Jest for testing.
 
