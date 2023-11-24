@@ -21,14 +21,14 @@ The U-develop-it provides a platform for creating and participating in polls. Us
 - npm package manager
 - MySQL installed
 
-### Installation
+## Installation
 
 1. Clone the repository
    
    ```bash
     git clone https://github.com/jay1195/u-develop-it.git
    
-## Install dependencies
+### Install dependencies
     npm install
 
 ## Database Setup
